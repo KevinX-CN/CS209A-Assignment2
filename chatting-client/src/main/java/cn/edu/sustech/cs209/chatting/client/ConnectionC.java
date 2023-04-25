@@ -196,7 +196,7 @@ public class ConnectionC {
               System.exit(0);
             case "%Close%":
               JOptionPane.showMessageDialog(null, "Server Closed!", "Server Closed!",
-                  JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.INFORMATION_MESSAGE);
               Close();
               break;
             case "%AU%":
@@ -242,7 +242,7 @@ public class ConnectionC {
                 ReloadMessageList();
               } else if (chatList.contains(M.GetChatRoomId())) {
                 JOptionPane.showMessageDialog(null, M.ToString(), "Message-" + U.GetUserName(),
-                    JOptionPane.INFORMATION_MESSAGE);
+                  JOptionPane.INFORMATION_MESSAGE);
               }
               break;
             case "%APC%":

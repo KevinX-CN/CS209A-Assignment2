@@ -107,7 +107,7 @@ public class Controller implements Initializable {
     Optional<Pair<String, String>> input = dialog.showAndWait();
     input.ifPresent(usernamePassword -> {
       try {
-        c = new ConnectionC(usernamePassword.getKey(),usernamePassword.getValue());
+        c = new ConnectionC(usernamePassword.getKey(), usernamePassword.getValue());
         if (!c.Connect()) {
           Platform.exit();
         }
@@ -128,7 +128,8 @@ public class Controller implements Initializable {
 
     // FIXME: get the user list from server, the current user's name should be filtered out
     List<String> UserList = c.GetuserList();
-    userSel.getItems().addAll(UserList.stream().filter(u -> !Objects.equals(u, username)).collect(Collectors.toList()));
+    userSel.getItems().addAll(
+      UserList.stream().filter(u -> !Objects.equals(u, username)).collect(Collectors.toList()));
 
     Button okBtn = new Button("OK");
     okBtn.setOnAction(e -> {

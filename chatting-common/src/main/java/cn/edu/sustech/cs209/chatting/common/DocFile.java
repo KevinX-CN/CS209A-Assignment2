@@ -34,6 +34,7 @@ public class DocFile {
   public void SetMessage(String UN, UUID CID) {
     this.MS = new Message<>(UN, CID, "File <" + this.FileName + ">");
   }
+
   public void ReadFile(String FileUrl) {
     try {
       InputStream IS = Files.newInputStream(Paths.get(FileUrl));

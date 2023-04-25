@@ -7,7 +7,7 @@ import java.util.UUID;
 public class GroupChat extends ChatRoom {
 
   public GroupChat(UUID CID, List<String> UL) {
-    this.RoomType="Group";
+    this.RoomType = "Group";
     this.ChatRoomId = CID;
     this.UserList.addAll(UL);
     Rename();

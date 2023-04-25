@@ -104,7 +104,7 @@ public class ConnectionS extends Thread {
           case "#CPCR#":
             DataLine = Receive.readLine();
             UN2 = DataLine;
-            CID = Server.Chat.AddPrivateChat(this.UserName, UN2);
+            CID = Server.Chat.addPrivateChat(this.UserName, UN2);
             Send.write("%R-CPCR%\n");
             Send.write(CID + "\n");
             Send.flush();
@@ -167,11 +167,11 @@ public class ConnectionS extends Thread {
           case "#SDM#":
             DataLine = Receive.readLine();
             DocFile DF = new DocFile(JSONObject.parseObject(DataLine));
-            Message<String> MS=DF.GetMS();
+            Message<String> MS = DF.GetMS();
             Server.Chat.AddMessage(MS);
             ATM(MS);
-            CID=MS.GetChatRoomId();
-            List<String> UN=Server.Chat.GetChatRoom(CID).GetUserList();
+            CID = MS.GetChatRoomId();
+            List<String> UN = Server.Chat.GetChatRoom(CID).GetUserList();
             UN.remove(this.UserName);
             for (String i : UN) {
               U2 = ConnectionSMap.get(i);

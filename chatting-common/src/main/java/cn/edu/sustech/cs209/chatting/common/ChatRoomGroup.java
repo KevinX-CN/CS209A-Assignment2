@@ -9,9 +9,9 @@ import java.util.UUID;
 public class ChatRoomGroup {
 
   private Map<UUID, ChatRoom> chatRoomMap = new HashMap<>();
-  private Map<String, UUID> PrivateChatMap = new HashMap<>();
+  private Map<String, UUID> privateChatMap = new HashMap<>();
 
-  private UUID GenerateCid() {
+  private UUID generateCid() {
     UUID cid = UUID.randomUUID();
     while (chatRoomMap.containsKey(cid)) {
       cid = UUID.randomUUID();
@@ -19,21 +19,21 @@ public class ChatRoomGroup {
     return cid;
   }
 
-  public UUID AddPrivateChat(String un1, String un2) {
+  public UUID addPrivateChat(String un1, String un2) {
     List<String> UL = new ArrayList<>();
     UL.add(un1);
     UL.add(un2);
-    ChatRoom P = new PrivateChat(GenerateCid(), UL);
-    if (PrivateChatMap.containsKey(P.GetChatRoomName())) {
+    ChatRoom P = new PrivateChat(generateCid(), UL);
+    if (privateChatMap.containsKey(P.GetChatRoomName())) {
       return null;
     }
     chatRoomMap.put(P.GetChatRoomId(), P);
-    PrivateChatMap.put(P.GetChatRoomName(), P.GetChatRoomId());
+    privateChatMap.put(P.GetChatRoomName(), P.GetChatRoomId());
     return P.GetChatRoomId();
   }
 
   public UUID AddGroupChat(List<String> UL) {
-    ChatRoom G = new GroupChat(GenerateCid(), UL);
+    ChatRoom G = new GroupChat(generateCid(), UL);
     chatRoomMap.put(G.GetChatRoomId(), G);
     return G.GetChatRoomId();
   }

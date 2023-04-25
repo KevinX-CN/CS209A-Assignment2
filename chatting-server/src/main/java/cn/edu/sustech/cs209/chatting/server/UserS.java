@@ -30,7 +30,7 @@ public class UserS {
     if (!HaveUser(UN)) {
       User U = new User(UN, PWD);
       UserMap.put(U.GetUserName(), U);
-      AllUserMap.put(U.GetUserName(),U);
+      AllUserMap.put(U.GetUserName(), U);
       return true;
     }
     return false;
