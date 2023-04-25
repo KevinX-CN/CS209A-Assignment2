@@ -2,6 +2,8 @@ package cn.edu.sustech.cs209.chatting.common;
 
 import com.alibaba.fastjson.JSONObject;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 public class User {
@@ -34,6 +36,9 @@ public class User {
 
   public String GetUserName() {
     return this.UserName;
+  }
+  public String GetUserPassWord() {
+    return this.PassWord;
   }
 
   public List<UUID> GetChatRoomList() {

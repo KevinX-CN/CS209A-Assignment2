@@ -68,10 +68,6 @@ public class ChatRoom {
     ChatRoonJSON.put("LastReplyTimestamp", this.LastReplyTimestamp);
     ChatRoonJSON.put("UserList", this.UserList);
     List<String> ML=new ArrayList<>();
-    for(int )
-    {
-      ChatRoonJSON.put("MessageList", this.MessageList);
-    }
     return ChatRoonJSON;
   }
 
