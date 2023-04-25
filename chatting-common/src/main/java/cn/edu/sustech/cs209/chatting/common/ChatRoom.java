@@ -11,7 +11,7 @@ public class ChatRoom {
   protected UUID ChatRoomId;
   protected String ChatRoomName;
   protected List<String> UserList = new ArrayList<>();
-  protected List<Message> MessageList = new ArrayList<>();
+  protected List<Message<String>> MessageList = new ArrayList<>();
   protected Long LastReplyTimestamp = 0L;
   protected String RoomType;
 
@@ -24,14 +24,14 @@ public class ChatRoom {
     this.ChatRoomName = J.getString("ChatRoomName");
     this.RoomType = J.getString("RoomType");
     this.LastReplyTimestamp = J.getLong("LastReplyTimestamp");
-    this.UserList = Convert.StringToList(J.getString("UserList"));
-    List<String> MSList = Convert.StringToList(J.getString("MessageList"));
+    this.UserList = Convert.stringToList(J.getString("UserList"));
+    List<String> MSList = Convert.stringToList(J.getString("MessageList"));
     if (MSList.isEmpty()|| MSList.get(0).equals("")) {
       return;
     }
     for (String i : MSList) {
       System.out.println(i);
-      MessageList.add(new Message(JSON.parseObject(i)));
+      MessageList.add(new Message<>(JSON.parseObject(i)));
     }
   }
 
@@ -52,7 +52,7 @@ public class ChatRoom {
     return this.RoomType;
   }
 
-  public List<Message> GetMessageList() {
+  public List<Message<String>> GetMessageList() {
     return this.MessageList;
   }
 
@@ -67,7 +67,6 @@ public class ChatRoom {
     ChatRoonJSON.put("RoomType", this.RoomType);
     ChatRoonJSON.put("LastReplyTimestamp", this.LastReplyTimestamp);
     ChatRoonJSON.put("UserList", this.UserList);
-    List<String> ML=new ArrayList<>();
     return ChatRoonJSON;
   }
 
@@ -77,8 +76,8 @@ public class ChatRoom {
     UL.add("B");
     PrivateChat PC = new PrivateChat(UUID.randomUUID(), UL);
     System.out.println(PC.ToJSON());
-    Message<String> MS1=new Message("A",UUID.randomUUID(),"HAHA");
-    Message<String> MS2=new Message("A",UUID.randomUUID(),"WAWA");
+    Message MS1=new Message("A",UUID.randomUUID(),"HAHA");
+    Message<String> MS2=new Message<>("A",UUID.randomUUID(),"WAWA");
     UL.add("C");
     GroupChat GC = new GroupChat(UUID.randomUUID(), UL);
     GC.AddMessage(MS1);

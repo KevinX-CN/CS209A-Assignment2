@@ -36,7 +36,7 @@ public class ConnectionS extends Thread {
 
   //Send To All User
   public static void SendToAll(String S) {
-    ConnectionSMap.values().stream().forEach(connection -> {
+    ConnectionSMap.values().forEach(connection -> {
       BufferedWriter BW = connection.Send;
       try {
         BW.write(S);
@@ -73,16 +73,17 @@ public class ConnectionS extends Thread {
 
   @Override
   public void run() {
-    String DataLine = "";
+    String DataLine;
     while (true) {
       try {
         DataLine = Receive.readLine();
         UUID CID;
         String UN2;
-        ConnectionS U2 = null;
+        ConnectionS U2;
         switch (DataLine) {
           case "#Close#":
             this.Send.write("%Quit%\n");
+            UserS.RemoveUser(this.UserName);
             this.Send.flush();
             RU(this.UserName);
             ConnectionSMap.remove(this.UserName);
@@ -95,7 +96,7 @@ public class ConnectionS extends Thread {
           case "#STM#":
             DataLine = Receive.readLine();
             JSONObject J = JSONObject.parseObject(DataLine);
-            Message<String> TM = new Message(J);
+            Message<String> TM = new Message<>(J);
             Server.Chat.AddMessage(TM);
             ATM(TM);
             break;
@@ -117,7 +118,7 @@ public class ConnectionS extends Thread {
           //Create Group Chat Room
           case "#CGCR#":
             DataLine = Receive.readLine();
-            List<String> UL = Convert.StringToList(DataLine);
+            List<String> UL = Convert.stringToList(DataLine);
             UL.add(this.UserName);
             System.out.println("UL:" + UL);
             CID = Server.Chat.AddGroupChat(UL);
@@ -156,10 +157,10 @@ public class ConnectionS extends Thread {
           case "#GCRM#":
             DataLine = Receive.readLine();
             CID = UUID.fromString(DataLine);
-            List<Message> LM = Server.Chat.GetChatRoom(CID).GetMessageList();
+            List<Message<String>> LM = Server.Chat.GetChatRoom(CID).GetMessageList();
             Send.write("%R-GCRM%\n");
             Send.write(LM.size() + "\n");
-            for (Message i : LM) {
+            for (Message<String> i : LM) {
               Send.write(i.ToJson().toJSONString() + "\n");
             }
             Send.flush();
@@ -201,6 +202,6 @@ public class ConnectionS extends Thread {
     Send.write("Success\n");
     Send.flush();
     ConnectionS SCT = new ConnectionS(S, UN);
-    SCT.run();
+    SCT.start();
   }
 }

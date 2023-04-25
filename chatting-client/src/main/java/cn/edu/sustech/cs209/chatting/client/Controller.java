@@ -2,7 +2,6 @@ package cn.edu.sustech.cs209.chatting.client;
 
 import cn.edu.sustech.cs209.chatting.common.Convert;
 import cn.edu.sustech.cs209.chatting.common.DocFile;
-import cn.edu.sustech.cs209.chatting.common.Message;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -15,31 +14,25 @@ import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import javafx.util.Pair;
 import javax.swing.JFileChooser;
 
@@ -56,7 +49,7 @@ public class Controller implements Initializable {
   ListView<String> OnlineUserList;
   @FXML
   ListView<String> ChatList;
-  protected ConnectionC C;
+  protected ConnectionC c;
   String username;
 
   public void ChangeMessageList(List<String> ML) {
@@ -103,7 +96,7 @@ public class Controller implements Initializable {
     grid.add(password, 1, 1);
 
     dialog.getDialogPane().setContent(grid);
-    Platform.runLater(() -> username.requestFocus());
+    Platform.runLater(username::requestFocus);
     dialog.setResultConverter(dialogButton -> {
       if (dialogButton == loginButtonType) {
         return new Pair<>(username.getText(), password.getText());
@@ -114,8 +107,8 @@ public class Controller implements Initializable {
     Optional<Pair<String, String>> input = dialog.showAndWait();
     input.ifPresent(usernamePassword -> {
       try {
-        C = new ConnectionC(usernamePassword.getKey(),usernamePassword.getValue());
-        if (!C.Connect()) {
+        c = new ConnectionC(usernamePassword.getKey(),usernamePassword.getValue());
+        if (!c.Connect()) {
           Platform.exit();
         }
       } catch (Throwable e) {
@@ -134,10 +127,8 @@ public class Controller implements Initializable {
     ComboBox<String> userSel = new ComboBox<>();
 
     // FIXME: get the user list from server, the current user's name should be filtered out
-    List<String> UserList = C.GetUserList();
-    userSel.getItems().addAll(UserList.stream().filter(u -> {
-      return u != username;
-    }).collect(Collectors.toList()));
+    List<String> UserList = c.GetuserList();
+    userSel.getItems().addAll(UserList.stream().filter(u -> !Objects.equals(u, username)).collect(Collectors.toList()));
 
     Button okBtn = new Button("OK");
     okBtn.setOnAction(e -> {
@@ -155,7 +146,7 @@ public class Controller implements Initializable {
     // TODO: if the current user already chatted with the selected user, just open the chat with that user
 
     System.out.println("Creat Private Chat:" + user.get());
-    C.CPCR(user.get());
+    c.CPCR(user.get());
     // TODO: otherwise, create a new chat item in the left panel, the title should be the selected user's name
   }
 
@@ -171,18 +162,19 @@ public class Controller implements Initializable {
   @FXML
   public void createGroupChat() throws IOException {
 
-    Dialog dialog = new TextInputDialog();
+    Dialog<String> dialog = new TextInputDialog();
     dialog.setTitle("Create Group Chat");
     dialog.setContentText("Please enter usernames(Divide by ', ':");
 
     Optional<String> result = dialog.showAndWait();
     List<String> UL = null;
     if (result.isPresent()) {
-      UL = Convert.StringToList("[" + result.get() + "]");
+      UL = Convert.stringToList("[" + result.get() + "]");
     }
     System.out.println(UL);
     // TODO: if the current user already chatted with the selected user, just open the chat with that user
-    C.CGCR(UL);
+    assert UL != null;
+    c.CGCR(UL);
     // TODO: otherwise, create a new chat item in the left panel, the title should be the selected user's name
 
   }
@@ -201,16 +193,16 @@ public class Controller implements Initializable {
       return;
     }
     InputArea.setText("");
-    C.STM(Text);
+    c.STM(Text);
   }
 
   @FXML
-  public void ChangChat(MouseEvent mouseEvent) throws IOException {
+  public void ChangChat() throws IOException {
     System.out.println(ChatList.getSelectionModel().getSelectedItem());
-    C.ChangeChat(ChatList.getSelectionModel().getSelectedItem());
+    c.ChangeChat(ChatList.getSelectionModel().getSelectedItem());
   }
 
-  public void doUploadFile(ActionEvent actionEvent) throws IOException {
+  public void doUploadFile() throws IOException {
     JFileChooser Chooser = new JFileChooser();
     Chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
     Chooser.setCurrentDirectory(new File("data/client"));
@@ -221,80 +213,9 @@ public class Controller implements Initializable {
       SelectedFile = Chooser.getSelectedFile();
     }
 
+    assert SelectedFile != null;
     DocFile DF = new DocFile(SelectedFile.getName());
     DF.ReadFile(SelectedFile.getAbsolutePath());
-    C.SDM(DF);
-  }
-
-  /**
-   * You may change the cell factory if you changed the design of {@code Message} model. Hint: you
-   * may also define a cell factory for the chats displayed in the left panel, or simply override
-   * the toString method.
-   */
-  private class MessageCellFactory implements Callback<ListView<Message>, ListCell<Message>> {
-
-    @Override
-    public ListCell<Message> call(ListView<Message> param) {
-      return new ListCell<Message>() {
-
-        public void updateItem(Message<String> msg, boolean empty) {
-          super.updateItem(msg, empty);
-          if (empty || Objects.isNull(msg)) {
-            setText(null);
-            setGraphic(null);
-            return;
-          }
-
-          HBox wrapper = new HBox();
-          Label nameLabel = new Label(msg.GetSenderName());
-          Label msgLabel = new Label(msg.GetMessage());
-
-          nameLabel.setPrefSize(50, 20);
-          nameLabel.setWrapText(true);
-          nameLabel.setStyle("-fx-border-color: black; -fx-border-width: 1px;");
-
-          if (username.equals(msg.GetSenderName())) {
-            wrapper.setAlignment(Pos.TOP_RIGHT);
-            wrapper.getChildren().addAll(msgLabel, nameLabel);
-            msgLabel.setPadding(new Insets(0, 20, 0, 0));
-          } else {
-            wrapper.setAlignment(Pos.TOP_LEFT);
-            wrapper.getChildren().addAll(nameLabel, msgLabel);
-            msgLabel.setPadding(new Insets(0, 0, 0, 20));
-          }
-
-          setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-          setGraphic(wrapper);
-        }
-      };
-    }
-  }
-
-  private class StringCellFactory implements Callback<ListView<String>, ListCell<String>> {
-
-    @Override
-    public ListCell<String> call(ListView<String> param) {
-      return new ListCell<String>() {
-
-        public void updateItem(String msg, boolean empty) {
-          super.updateItem(msg, empty);
-          if (empty || Objects.isNull(msg)) {
-            setText(null);
-            setGraphic(null);
-            return;
-          }
-
-          HBox wrapper = new HBox();
-          Label nameLabel = new Label(msg);
-
-          nameLabel.setPrefSize(50, 20);
-          nameLabel.setWrapText(true);
-          nameLabel.setStyle("-fx-border-color: black; -fx-border-width: 1px;");
-
-          setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-          setGraphic(wrapper);
-        }
-      };
-    }
+    c.SDM(DF);
   }
 }

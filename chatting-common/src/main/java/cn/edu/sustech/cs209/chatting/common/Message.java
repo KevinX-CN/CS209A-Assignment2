@@ -37,16 +37,8 @@ public class Message<T> {
     return this.Timestamp;
   }
 
-  public String GetSenderName() {
-    return this.SenderName;
-  }
-
   public UUID GetChatRoomId() {
     return this.ChatRoomId;
-  }
-
-  public T GetMessage() {
-    return this.Message;
   }
 
   public String ToString() {

@@ -9,6 +9,8 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +18,7 @@ import java.util.Map;
 
 public class UserS {
 
-  private static String FilePath = "data/server/user.config";
+  private static final String FilePath = "data/server/user.config";
   private static Map<String, User> AllUserMap = new HashMap<>();
   private static Map<String, User> UserMap = new HashMap<>();
 
@@ -62,7 +64,8 @@ public class UserS {
 
   public static void Load() throws IOException {
     AllUserMap = new HashMap<>();
-    BufferedReader FR = new BufferedReader(new InputStreamReader(new FileInputStream(FilePath)));
+    BufferedReader FR = new BufferedReader(new InputStreamReader(
+      Files.newInputStream(Paths.get(FilePath))));
     String FileLine;
     while ((FileLine = FR.readLine()) != null) {
       User U = new User(JSONObject.parseObject(FileLine));
