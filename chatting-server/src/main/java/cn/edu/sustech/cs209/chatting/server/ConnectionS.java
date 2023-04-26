@@ -3,14 +3,12 @@ package cn.edu.sustech.cs209.chatting.server;
 import cn.edu.sustech.cs209.chatting.common.Convert;
 import cn.edu.sustech.cs209.chatting.common.FileMessage;
 import cn.edu.sustech.cs209.chatting.common.TextMessage;
-import cn.edu.sustech.cs209.chatting.common.User;
 import com.alibaba.fastjson.JSONObject;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +17,7 @@ import java.util.UUID;
 
 public class ConnectionS extends Thread {
 
-  private static Map<String, ConnectionS> ConnectionSMap = new HashMap<>();
+  private static final Map<String, ConnectionS> ConnectionSMap = new HashMap<>();
   private final Socket Connection;
   private final BufferedReader Receive;
   private final BufferedWriter Send;
@@ -37,11 +35,11 @@ public class ConnectionS extends Thread {
 
   //Send To All User
   public static void SendToAll(String S) {
-    ConnectionSMap.values().stream().forEach(connection -> {
-      BufferedWriter BW = connection.Send;
+    ConnectionSMap.values().forEach(connection -> {
+      BufferedWriter bw = connection.Send;
       try {
-        BW.write(S);
-        BW.flush();
+        bw.write(S);
+        bw.flush();
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -74,13 +72,13 @@ public class ConnectionS extends Thread {
 
   @Override
   public void run() {
-    String DataLine = "";
+    String DataLine;
     while (true) {
       try {
         DataLine = Receive.readLine();
-        UUID CID;
-        String UN2;
-        ConnectionS U2 = null;
+        UUID cid;
+        String un2;
+        ConnectionS U2;
         switch (DataLine) {
           case "#Close#":
             this.Send.flush();
@@ -99,72 +97,71 @@ public class ConnectionS extends Thread {
             DataLine = Receive.readLine();
             System.out.println(DataLine);
             JSONObject J = JSONObject.parseObject(DataLine);
-            TextMessage TM = new TextMessage(J);
-            Server.Chat.AddMessage(TM);
-            ATM(TM);
+            TextMessage tm = new TextMessage(J);
+            Server.Chat.addMessage(tm);
+            ATM(tm);
             break;
           //Create Private Chat Room
           case "#CPCR#":
             DataLine = Receive.readLine();
-            UN2 = DataLine;
-            CID = Server.Chat.AddPrivateChat(this.UserName, UN2);
+            un2 = DataLine;
+            cid = Server.Chat.addPrivateChat(this.UserName, un2);
             Send.write("%R-CPCR%\n");
-            Send.write(CID + "\n");
+            Send.write(cid + "\n");
             Send.flush();
-            U2 = ConnectionSMap.get(UN2);
+            U2 = ConnectionSMap.get(un2);
             U2.Send.write("%APC%\n");
             U2.Send.write(this.UserName + "\n");
-            U2.Send.write(CID + "\n");
-            U2.Send.write(Server.Chat.GetChatRoom(CID).getChatRoomName() + "\n");
+            U2.Send.write(cid + "\n");
+            U2.Send.write(Server.Chat.getChatRoom(cid).getChatRoomName() + "\n");
             U2.Send.flush();
             break;
           //Create Group Chat Room
           case "#CGCR#":
             DataLine = Receive.readLine();
-            List<String> UL = Convert.stringToList(DataLine);
-            UL.add(this.UserName);
-            System.out.println("UL:" + UL);
-            CID = Server.Chat.AddGroupChat(UL);
+            List<String> ul = Convert.stringToList(DataLine);
+            ul.add(this.UserName);
+            System.out.println("UL:" + ul);
+            cid = Server.Chat.addGroupChat(ul);
             Send.write("%R-CGCR%\n");
-            Send.write(CID + "\n");
-            Send.write(Server.Chat.GetChatRoom(CID).getChatRoomName() + "\n");
+            Send.write(cid + "\n");
+            Send.write(Server.Chat.getChatRoom(cid).getChatRoomName() + "\n");
             Send.flush();
             System.out.println("Send Fnishied");
-            UL.remove(this.UserName);
-            for (String i : UL) {
+            ul.remove(this.UserName);
+            for (String i : ul) {
               U2 = ConnectionSMap.get(i);
               U2.Send.write("%AGC%\n");
-              U2.Send.write(CID + "\n");
-              U2.Send.write(Server.Chat.GetChatRoom(CID).getChatRoomName() + "\n");
+              U2.Send.write(cid + "\n");
+              U2.Send.write(Server.Chat.getChatRoom(cid).getChatRoomName() + "\n");
               U2.Send.flush();
             }
             break;
           //Join Group Chat Room
           case "#JGCR#":
             DataLine = Receive.readLine();
-            CID = UUID.fromString(DataLine);
-            Server.Chat.JoinGroupChat(CID, this.UserName);
+            cid = UUID.fromString(DataLine);
+            Server.Chat.joinGroupChat(cid, this.UserName);
             break;
           //Quit Group Chat Room
           case "#QGCR#":
             DataLine = Receive.readLine();
-            CID = UUID.fromString(DataLine);
-            Server.Chat.QuitGroupChat(CID, this.UserName);
+            cid = UUID.fromString(DataLine);
+            Server.Chat.quitGroupChat(cid, this.UserName);
             break;
           case "#GCRN#":
             DataLine = Receive.readLine();
-            CID = UUID.fromString(DataLine);
-            String GN = Server.Chat.GetChatRoom(CID).getChatRoomName();
-            Send.write(CID + "\n");
+            cid = UUID.fromString(DataLine);
+            Send.write(cid + "\n");
             Send.flush();
             break;
           case "#GCRM#":
             DataLine = Receive.readLine();
-            CID = UUID.fromString(DataLine);
-            List<TextMessage> LM = Server.Chat.GetChatRoom(CID).getMessageList();
+            cid = UUID.fromString(DataLine);
+            List<TextMessage> lm = Server.Chat.getChatRoom(cid).getMessageList();
             Send.write("%R-GCRM%\n");
-            Send.write(LM.size() + "\n");
-            for (TextMessage i : LM) {
+            Send.write(lm.size() + "\n");
+            for (TextMessage i : lm) {
               Send.write(i.toJson().toJSONString() + "\n");
             }
             Send.flush();
@@ -172,14 +169,14 @@ public class ConnectionS extends Thread {
           case "#SDM#":
             DataLine = Receive.readLine();
             System.out.println("SDM:" + DataLine);
-            FileMessage DF = new FileMessage(JSONObject.parseObject(DataLine));
-            CID = DF.getChatRoomId();
-            List<String> UN = Server.Chat.GetChatRoom(CID).getUserList();
-            UN.remove(this.UserName);
-            for (String i : UN) {
+            FileMessage df = new FileMessage(JSONObject.parseObject(DataLine));
+            cid = df.getChatRoomId();
+            List<String> un = Server.Chat.getChatRoom(cid).getUserList();
+            un.remove(this.UserName);
+            for (String i : un) {
               U2 = ConnectionSMap.get(i);
               U2.Send.write("%RDM%\n");
-              U2.Send.write(CID + "\n");
+              U2.Send.write(cid + "\n");
               U2.Send.write(DataLine + "\n");
               U2.Send.flush();
             }
@@ -189,22 +186,5 @@ public class ConnectionS extends Thread {
         interrupt();
       }
     }
-  }
-
-  public static void main(String[] args) throws IOException {
-    int ServerPort = 1777;
-    ServerSocket Server = new ServerSocket(ServerPort);
-    Socket S = Server.accept();
-    BufferedWriter Send = new BufferedWriter(new OutputStreamWriter(S.getOutputStream()));
-    BufferedReader Receive = new BufferedReader(new InputStreamReader(S.getInputStream()));
-    String UN = Receive.readLine();
-    if (!UserS.AddUser(UN, "")) {
-      Send.write("Fail\n");
-      Send.flush();
-    }
-    Send.write("Success\n");
-    Send.flush();
-    ConnectionS SCT = new ConnectionS(S, UN);
-    SCT.run();
   }
 }

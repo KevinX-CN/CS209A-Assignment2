@@ -5,8 +5,6 @@ import cn.edu.sustech.cs209.chatting.common.FileMessage;
 import cn.edu.sustech.cs209.chatting.common.TextMessage;
 import cn.edu.sustech.cs209.chatting.common.User;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -15,7 +13,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,196 +24,131 @@ public class ConnectionC {
 
   private static final String ServerHost = "localhost";
   private static final int ServerPort = 1777;
-  private final Socket S;
-  private final BufferedReader Receive;
-  private final BufferedWriter Send;
+  private final Socket s;
+  private final BufferedReader receive;
+  private final BufferedWriter send;
   protected final User U;
-  private List<String> UserList = new ArrayList<>();
-  private List<UUID> ChatList = new ArrayList<>();
-  private Map<String, UUID> PrivateChatMap = new HashMap<>();
-  private Map<UUID, List<String>> GroupChatUserMap = new HashMap<>();
-  private Map<UUID, String> ChatNameMap = new HashMap<>();
-  private Map<String, UUID> ReChatNameMap = new HashMap<>();
-  private Map<UUID, Long> ChatLastTime = new HashMap<>();
-  private MessageListener ML;
+  private final List<String> UserList = new ArrayList<>();
+  private final List<UUID> ChatList = new ArrayList<>();
+  private final Map<String, UUID> PrivateChatMap = new HashMap<>();
+  private final Map<UUID, List<String>> GroupChatUserMap = new HashMap<>();
+  private final Map<UUID, String> ChatNameMap = new HashMap<>();
+  private final Map<String, UUID> ReChatNameMap = new HashMap<>();
+  private final Map<UUID, Long> ChatLastTime = new HashMap<>();
+  private MessageListener ml;
   UUID NowChat = UUID.randomUUID();
   private List<TextMessage> NowMessageList = new ArrayList<>();
   private String TempString;
   private List<String> TempListString;
 
-  String formatMap(Map<String, UUID> map) {
-    return Joiner.on(",").withKeyValueSeparator("=").join(map);
-  }
-
-  Map<String, UUID> parseMap(String formattedMap) {
-    Map<String, String> sMap = Splitter.on(",").withKeyValueSeparator("=").split(formattedMap);
-    Map<String, UUID> uMap = new HashMap<>();
-    for (String i : sMap.keySet()) {
-      uMap.put(i, UUID.fromString(sMap.get(i)));
-    }
-    return uMap;
-  }
-
-  Map<UUID, String> parseMap2(String formattedMap) {
-    Map<String, String> sMap = Splitter.on(",").withKeyValueSeparator("=").split(formattedMap);
-    Map<UUID, String> uMap = new HashMap<>();
-    for (String i : sMap.keySet()) {
-      uMap.put(UUID.fromString(i), sMap.get(i));
-    }
-    return uMap;
-  }
-
-  /*public void Save() throws IOException {
-    File f = new File("data/client/" + U.getUserName() + "/History.data");
-    System.out.println(f.getAbsolutePath());
-    if (!f.exists()) {
-      f.createNewFile();
-    }
-    BufferedWriter w = new BufferedWriter(new FileWriter(f));
-    w.write(ChatList + "\n");
-    w.write(formatMap(PrivateChatMap) + "\n");
-    w.write(formatMap(ReChatNameMap) + "\n");
-    w.flush();
-  }
-
-  public void Load() throws IOException {
-    File f = new File("data/client/" + U.getUserName() + "/History.data");
-    BufferedReader r = new BufferedReader(new FileReader(f));
-    this.ChatList = new ArrayList<>();
-    List<String> sList = Convert.stringToList(r.readLine());
-    for (String i : sList) {
-      this.ChatList.add(UUID.fromString(i));
-    }
-    this.PrivateChatMap = parseMap(r.readLine());
-    this.ReChatNameMap = parseMap(r.readLine());
-    this.ChatNameMap = new HashMap<>();
-    for (String i : this.ReChatNameMap.keySet()) {
-      this.ChatNameMap.put(ReChatNameMap.get(i), i);
-    }
-  }*/
 
   public void ChangeChat(String ChatName) throws IOException {
-    UUID CID = ReChatNameMap.get(ChatName);
-    if (NowChat == CID) {
+    UUID cid = ReChatNameMap.get(ChatName);
+    if (NowChat == cid) {
       return;
     }
     NowMessageList = new ArrayList<>();
-    NowChat = CID;
-    GCRM(CID);
-    Platform.runLater(new Runnable() {
-      @Override
-      public void run() {
-        ReloadMessageList();
-      }
-    });
+    NowChat = cid;
+    GCRM(cid);
+    Platform.runLater(this::ReloadMessageList);
   }
 
-  public void ChangeChat(UUID CID) throws IOException {
+  public void ChangeChat(UUID cid) throws IOException {
     NowMessageList = new ArrayList<>();
-    NowChat = CID;
-    GCRM(CID);
-    Platform.runLater(new Runnable() {
-      @Override
-      public void run() {
-        ReloadMessageList();
-      }
-    });
+    NowChat = cid;
+    GCRM(cid);
+    Platform.runLater(this::ReloadMessageList);
   }
 
-  ConnectionC(String UN, String PWD) throws Throwable {
-    this.U = new User(UN, PWD);
-    //File f = new File("data/client/" + UN + "/History.data");
-    //if (f.exists()) {
-      //Load();
-    //}
-    this.S = new Socket(ServerHost, ServerPort);
-    this.Receive = new BufferedReader(new InputStreamReader(this.S.getInputStream()));
-    this.Send = new BufferedWriter(new OutputStreamWriter(this.S.getOutputStream()));
+  ConnectionC(String un, String pwd) throws Throwable {
+    this.U = new User(un, pwd);
+    this.s = new Socket(ServerHost, ServerPort);
+    this.receive = new BufferedReader(new InputStreamReader(this.s.getInputStream()));
+    this.send = new BufferedWriter(new OutputStreamWriter(this.s.getOutputStream()));
 
-    File folder = new File("data/client/" + UN + "/");
+    File folder = new File("data/client/" + un + "/");
     folder.mkdirs();
   }
 
   public void Close() throws Throwable {
-    this.Send.write("Close\n");
-    this.Send.flush();
-    this.Send.close();
-    this.Receive.close();
-    this.S.close();
+    this.send.write("Close\n");
+    this.send.flush();
+    this.send.close();
+    this.receive.close();
+    this.s.close();
   }
 
   public boolean Connect() throws Throwable {
-    this.Send.write(this.U.getUserName() + "\n");
-    this.Send.write(this.U.getPassWord() + "\n");
-    this.Send.flush();
-    String Reply = this.Receive.readLine();
+    this.send.write(this.U.getUserName() + "\n");
+    this.send.write(this.U.getPassWord() + "\n");
+    this.send.flush();
+    String Reply = this.receive.readLine();
     if (Reply.equals("Fail")) {
       this.Close();
       return false;
     }
-    String ULS = this.Receive.readLine();
-    List<String> UL = Convert.stringToList(ULS);
-    for (String i : UL) {
+    String uls = this.receive.readLine();
+    List<String> ul = Convert.stringToList(uls);
+    for (String i : ul) {
       if (!i.equals(this.U.getUserName())) {
         this.UserList.add(i);
       }
     }
     try {
-      Controller.NowController.ChangeOnlineUserList(this.UserList);
-    } catch (Exception e) {
+      Controller.nowController.changeOnlineUserList(this.UserList);
+    } catch (Exception ignored) {
 
     }
-    ML = new MessageListener(this.Receive, this);
-    ML.start();
+    ml = new MessageListener();
+    ml.start();
     return true;
   }
 
 
   //Send Text Message
-  public void STM(String T) throws IOException {
-    TextMessage TM = new TextMessage(U.getUserName(), NowChat, T);
-    this.Send.write("#STM#\n");
-    this.Send.write(TM.toJson().toJSONString() + "\n");
-    this.Send.flush();
+  public void stm(String T) throws IOException {
+    TextMessage tm = new TextMessage(U.getUserName(), NowChat, T);
+    this.send.write("#STM#\n");
+    this.send.write(tm.toJson().toJSONString() + "\n");
+    this.send.flush();
     ChatLastTime.put(NowChat, System.currentTimeMillis());
   }
 
 
   //Send Doc Message
-  public void SDM(FileMessage DF) throws IOException {
-    this.Send.write("#SDM#\n");
-    this.Send.write(DF.ToJson().toJSONString() + "\n");
-    this.Send.flush();
-    System.out.println("SDM:" + DF.ToJson().toJSONString());
+  public void sdm(FileMessage df) throws IOException {
+    this.send.write("#SDM#\n");
+    this.send.write(df.ToJson().toJSONString() + "\n");
+    this.send.flush();
+    System.out.println("SDM:" + df.ToJson().toJSONString());
   }
 
   public void ReloadMessageList() {
     ReloadChatList();
-    List<String> ML = new ArrayList<>();
+    List<String> ml = new ArrayList<>();
     if (GroupChatUserMap.containsKey(NowChat)) {
-      ML.add("CurrentUser:" + GroupChatUserMap.get(NowChat).toString());
+      ml.add("CurrentUser:" + GroupChatUserMap.get(NowChat).toString());
     }
     for (TextMessage i : NowMessageList) {
-      ML.add(i.toString());
+      ml.add(i.toString());
     }
     try {
-      Controller.NowController.ChangeMessageList(ML);
-    } catch (Exception e) {
+      Controller.nowController.ChangeMessageList(ml);
+    } catch (Exception ignored) {
 
     }
   }
 
   public void ReloadChatList() {
-    Collections.sort(this.ChatList,
-      (o1, o2) -> (int) (ChatLastTime.get(o2) - ChatLastTime.get(o1)));
-    System.out.println(ChatLastTime.toString());
+    this.ChatList.sort((o1, o2) -> (int) (ChatLastTime.get(o2) - ChatLastTime.get(o1)));
+    System.out.println(ChatLastTime);
     List<String> ChatNameList = new ArrayList<>();
     for (UUID i : ChatList) {
       ChatNameList.add(ChatNameMap.get(i));
     }
     try {
-      Controller.NowController.ChangeChatList(ChatNameList);
-    } catch (Exception e) {
+      Controller.nowController.ChangeChatList(ChatNameList);
+    } catch (Exception ignored) {
 
     }
   }
@@ -231,25 +163,25 @@ public class ConnectionC {
       return;
     }
     this.TempString = UN2;
-    this.Send.write("#CPCR#\n");
-    this.Send.write(UN2 + "\n");
-    this.Send.flush();
+    this.send.write("#CPCR#\n");
+    this.send.write(UN2 + "\n");
+    this.send.flush();
   }
 
   //Create Group Chat Room
   public void CGCR(List<String> UL) throws IOException {
-    this.Send.write("#CGCR#\n");
-    this.Send.write(UL + "\n");
-    this.Send.flush();
+    this.send.write("#CGCR#\n");
+    this.send.write(UL + "\n");
+    this.send.flush();
     UL.add(this.U.getUserName());
     TempListString = UL;
   }
 
   //Get Chat Room Message
   private void GCRM(UUID CID) throws IOException {
-    this.Send.write("#GCRM#\n");
-    this.Send.write(CID + "\n");
-    this.Send.flush();
+    this.send.write("#GCRM#\n");
+    this.send.write(CID + "\n");
+    this.send.flush();
   }
 
   public void writeFile(FileMessage DF) throws IOException {
@@ -261,21 +193,19 @@ public class ConnectionC {
   }
 
   public void CloseClient() throws Throwable {
-    ML.interrupt();
-    this.Send.write("#Close#\n");
-    this.Send.flush();
+    ml.interrupt();
+    this.send.write("#Close#\n");
+    this.send.flush();
     Close();
     Thread.sleep(5000);
   }
 
   class MessageListener extends Thread {
 
-    private BufferedReader MessageReceive;
-    private ConnectionC OriginalConnection;
+    private final BufferedReader MessageReceive;
 
-    public MessageListener(BufferedReader R, ConnectionC OC) throws IOException {
-      this.MessageReceive = new BufferedReader(new InputStreamReader(S.getInputStream()));
-      this.OriginalConnection = OC;
+    public MessageListener() throws IOException {
+      this.MessageReceive = new BufferedReader(new InputStreamReader(s.getInputStream()));
     }
 
     public void run() {
@@ -291,7 +221,7 @@ public class ConnectionC {
               System.exit(0);
             case "%Close%":
               JOptionPane.showMessageDialog(null, "Server Closed!", "Server Closed!",
-                JOptionPane.INFORMATION_MESSAGE);
+                  JOptionPane.INFORMATION_MESSAGE);
               Close();
               while (true) {
                 continue;
@@ -302,12 +232,7 @@ public class ConnectionC {
                 continue;
               }
               UserList.add(DataLine1);
-              Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                  Controller.NowController.ChangeOnlineUserList(UserList);
-                }
-              });
+              Platform.runLater(() -> Controller.nowController.changeOnlineUserList(UserList));
               break;
             case "%RU%":
               DataLine1 = MessageReceive.readLine();
@@ -323,14 +248,11 @@ public class ConnectionC {
                   NowMessageList = new ArrayList<>();
                 }
               }
-              Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
+              Platform.runLater(() -> {
 
-                  Controller.NowController.ChangeOnlineUserList(UserList);
-                  ReloadChatList();
-                  ReloadMessageList();
-                }
+                Controller.nowController.changeOnlineUserList(UserList);
+                ReloadChatList();
+                ReloadMessageList();
               });
               break;
             case "%RDM%":
@@ -348,12 +270,7 @@ public class ConnectionC {
               if (NowChat != null && NowChat.equals(M.getChatRoomId())) {
                 NowMessageList.add(M);
                 ChatLastTime.put(M.getChatRoomId(), M.getTimestamp());
-                Platform.runLater(new Runnable() {
-                  @Override
-                  public void run() {
-                    ReloadMessageList();
-                  }
-                });
+                Platform.runLater(ConnectionC.this::ReloadMessageList);
               } else if (ChatList.contains(M.getChatRoomId())) {
                 JOptionPane.showMessageDialog(null, M.toString(), "Message-" + U.getUserName(),
                   JOptionPane.INFORMATION_MESSAGE);
@@ -375,12 +292,7 @@ public class ConnectionC {
               }
               ChatList.add(UUID.fromString(DataLine2));
               ChatLastTime.put(CID, 0L);
-              Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                  ReloadChatList();
-                }
-              });
+              Platform.runLater(ConnectionC.this::ReloadChatList);
               break;
             case "%AGC%":
               DataLine1 = MessageReceive.readLine();
@@ -391,12 +303,7 @@ public class ConnectionC {
               ChatList.add(CID);
               NowChat = CID;
               ChangeChat(CID);
-              Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                  ReloadChatList();
-                }
-              });
+              Platform.runLater(ConnectionC.this::ReloadChatList);
               ChatLastTime.put(CID, 0L);
               break;
             case "%R-CPCR%":
@@ -409,12 +316,7 @@ public class ConnectionC {
               NowChat = CID;
               ChangeChat(CID);
               ChatLastTime.put(CID, System.currentTimeMillis());
-              Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                  ReloadChatList();
-                }
-              });
+              Platform.runLater(ConnectionC.this::ReloadChatList);
               break;
             case "%R-GCRM%":
               List<TextMessage> LM = new ArrayList<>();
@@ -424,12 +326,7 @@ public class ConnectionC {
                 LM.add(new TextMessage(JSONObject.parseObject(DataLine2)));
               }
               NowMessageList = LM;
-              Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                  ReloadMessageList();
-                }
-              });
+              Platform.runLater(ConnectionC.this::ReloadMessageList);
               break;
             case "%R-CGCR%":
               DataLine1 = MessageReceive.readLine();
@@ -445,12 +342,7 @@ public class ConnectionC {
               System.out.println(ChatList);
               ChangeChat(CID);
               ChatLastTime.put(CID, System.currentTimeMillis());
-              Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                  ReloadChatList();
-                }
-              });
+              Platform.runLater(ConnectionC.this::ReloadChatList);
               break;
           }
         } catch (java.lang.IllegalStateException e) {

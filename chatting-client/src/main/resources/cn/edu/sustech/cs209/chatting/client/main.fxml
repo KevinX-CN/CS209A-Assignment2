@@ -25,15 +25,15 @@
     <SplitPane dividerPositions="0.25" focusTraversable="true" VBox.vgrow="ALWAYS">
         <VBox prefHeight="200.0" prefWidth="100.0">
             <children>
-                <ListView fx:id="ChatList" onMouseClicked="#ChangChat" prefHeight="345.0" prefWidth="200.0" />
-                <ListView fx:id="OnlineUserList" prefHeight="200.0" prefWidth="200.0" />
+                <ListView fx:id="chatList" onMouseClicked="#changeChat" prefHeight="345.0" prefWidth="200.0" />
+                <ListView fx:id="onlineUserList" prefHeight="200.0" prefWidth="200.0" />
             </children>
         </VBox>
         <SplitPane dividerPositions="0.85" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0">
             <ListView fx:id="chatContentList" prefHeight="200.0" prefWidth="200.0" />
             <HBox prefHeight="100.0" prefWidth="200.0">
                 <Button maxHeight="1.7976931348623157E308" mnemonicParsing="false" onAction="#doUploadFile" text="Upload" />
-                <TextArea fx:id="InputArea" prefHeight="79.0" prefWidth="557.0" HBox.hgrow="ALWAYS" />
+                <TextArea fx:id="inputArea" prefHeight="79.0" prefWidth="557.0" HBox.hgrow="ALWAYS" />
                 <Button maxHeight="1.7976931348623157E308" mnemonicParsing="false" onAction="#doSendMessage" text="Send" HBox.hgrow="ALWAYS" />
             </HBox>
         </SplitPane>

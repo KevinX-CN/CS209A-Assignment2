@@ -5,10 +5,11 @@ import com.alibaba.fastjson.JSONObject;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,14 +29,14 @@ public class UserS {
     if (!HaveUser(UN)) {
       User U = new User(UN, PWD);
       UserMap.put(U.getUserName(), U);
-      AllUserMap.put(U.getUserName(),U);
+      AllUserMap.put(U.getUserName(), U);
       return true;
     }
     return false;
   }
 
-  public static void RemoveUser(String UN) {
-    UserMap.remove(UN);
+  public static void RemoveUser(String un) {
+    UserMap.remove(un);
   }
 
   public static List<String> GetAllUserName() {
@@ -52,8 +53,7 @@ public class UserS {
     }
   }
 
-  public static boolean UserOnline(String un)
-  {
+  public static boolean UserOnline(String un) {
     return UserMap.containsKey(un);
   }
 
@@ -67,9 +67,10 @@ public class UserS {
 
   public static void Load() throws IOException {
     AllUserMap = new HashMap<>();
-    BufferedReader FR = new BufferedReader(new InputStreamReader(new FileInputStream(FilePath)));
+    BufferedReader fr = new BufferedReader(new InputStreamReader(
+        Files.newInputStream(Paths.get(FilePath))));
     String FileLine;
-    while ((FileLine = FR.readLine()) != null) {
+    while ((FileLine = fr.readLine()) != null) {
       User U = new User(JSONObject.parseObject(FileLine));
       AllUserMap.put(U.getUserName(), U);
     }

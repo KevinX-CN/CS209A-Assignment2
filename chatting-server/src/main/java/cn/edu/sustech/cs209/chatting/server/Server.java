@@ -35,22 +35,22 @@ public class Server {
       Socket S = Server.accept();
       BufferedWriter Send = new BufferedWriter(new OutputStreamWriter(S.getOutputStream()));
       BufferedReader Receive = new BufferedReader(new InputStreamReader(S.getInputStream()));
-      String UN = Receive.readLine();
-      String PWD = Receive.readLine();
-      if (!UserS.UserOnline(UN) && UserS.HaveUser(UN)) {
-        if (!UserS.Identify(UN, PWD)) {
+      String un = Receive.readLine();
+      String pwd = Receive.readLine();
+      if (!UserS.UserOnline(un) && UserS.HaveUser(un)) {
+        if (!UserS.Identify(un, pwd)) {
           Send.write("Fail\n");
           Send.flush();
           continue;
         }
-      } else if (!UserS.AddUser(UN, PWD)) {
+      } else if (!UserS.AddUser(un, pwd)) {
         Send.write("Fail\n");
         Send.flush();
         continue;
       }
       Send.write("Success\n");
       Send.flush();
-      ConnectionS SCT = new ConnectionS(S, UN);
+      ConnectionS SCT = new ConnectionS(S, un);
       SCT.start();
       Send.flush();
     }
