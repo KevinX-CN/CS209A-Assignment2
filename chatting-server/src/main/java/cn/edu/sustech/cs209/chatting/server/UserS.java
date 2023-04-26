@@ -9,8 +9,6 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,14 +21,14 @@ public class UserS {
   private static Map<String, User> UserMap = new HashMap<>();
 
   public static boolean HaveUser(String UN) {
-    return UserMap.containsKey(UN);
+    return AllUserMap.containsKey(UN);
   }
 
   public static boolean AddUser(String UN, String PWD) {
     if (!HaveUser(UN)) {
       User U = new User(UN, PWD);
-      UserMap.put(U.GetUserName(), U);
-      AllUserMap.put(U.GetUserName(), U);
+      UserMap.put(U.getUserName(), U);
+      AllUserMap.put(U.getUserName(),U);
       return true;
     }
     return false;
@@ -49,13 +47,18 @@ public class UserS {
     F.createNewFile();
     BufferedWriter FW = new BufferedWriter(new FileWriter(F));
     for (User i : AllUserMap.values()) {
-      FW.write(i.ToJSON() + "\n");
+      FW.write(i.toJson() + "\n");
       FW.flush();
     }
   }
 
+  public static boolean UserOnline(String un)
+  {
+    return UserMap.containsKey(un);
+  }
+
   public static boolean Identify(String UN, String PWD) {
-    if (AllUserMap.get(UN).Identify(PWD)) {
+    if (AllUserMap.get(UN).identify(PWD)) {
       UserMap.put(UN, AllUserMap.get(UN));
       return true;
     }
@@ -64,12 +67,11 @@ public class UserS {
 
   public static void Load() throws IOException {
     AllUserMap = new HashMap<>();
-    BufferedReader FR = new BufferedReader(new InputStreamReader(
-      Files.newInputStream(Paths.get(FilePath))));
+    BufferedReader FR = new BufferedReader(new InputStreamReader(new FileInputStream(FilePath)));
     String FileLine;
     while ((FileLine = FR.readLine()) != null) {
       User U = new User(JSONObject.parseObject(FileLine));
-      AllUserMap.put(U.GetUserName(), U);
+      AllUserMap.put(U.getUserName(), U);
     }
   }
 

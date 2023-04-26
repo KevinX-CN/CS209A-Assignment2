@@ -37,16 +37,13 @@ public class Server {
       BufferedReader Receive = new BufferedReader(new InputStreamReader(S.getInputStream()));
       String UN = Receive.readLine();
       String PWD = Receive.readLine();
-      if(UserS.HaveUser(UN))
-      {
-        if(!UserS.Identify(UN,PWD))
-        {
+      if (!UserS.UserOnline(UN) && UserS.HaveUser(UN)) {
+        if (!UserS.Identify(UN, PWD)) {
           Send.write("Fail\n");
           Send.flush();
           continue;
         }
-      }
-      else if(!UserS.AddUser(UN, PWD)) {
+      } else if (!UserS.AddUser(UN, PWD)) {
         Send.write("Fail\n");
         Send.flush();
         continue;

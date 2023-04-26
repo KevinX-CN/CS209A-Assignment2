@@ -1,8 +1,9 @@
 package cn.edu.sustech.cs209.chatting.server;
 
 import cn.edu.sustech.cs209.chatting.common.Convert;
-import cn.edu.sustech.cs209.chatting.common.DocFile;
-import cn.edu.sustech.cs209.chatting.common.Message;
+import cn.edu.sustech.cs209.chatting.common.FileMessage;
+import cn.edu.sustech.cs209.chatting.common.TextMessage;
+import cn.edu.sustech.cs209.chatting.common.User;
 import com.alibaba.fastjson.JSONObject;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -36,7 +37,7 @@ public class ConnectionS extends Thread {
 
   //Send To All User
   public static void SendToAll(String S) {
-    ConnectionSMap.values().forEach(connection -> {
+    ConnectionSMap.values().stream().forEach(connection -> {
       BufferedWriter BW = connection.Send;
       try {
         BW.write(S);
@@ -64,39 +65,41 @@ public class ConnectionS extends Thread {
   }
 
   //AddTextMessage
-  public static void ATM(Message<String> M) {
+  public static void ATM(TextMessage M) {
     String S = "";
     S = S + "%ATM%\n";
-    S = S + M.ToJson().toJSONString() + "\n";
+    S = S + M.toJson().toJSONString() + "\n";
     SendToAll(S);
   }
 
   @Override
   public void run() {
-    String DataLine;
+    String DataLine = "";
     while (true) {
       try {
         DataLine = Receive.readLine();
         UUID CID;
         String UN2;
-        ConnectionS U2;
+        ConnectionS U2 = null;
         switch (DataLine) {
           case "#Close#":
-            this.Send.write("%Quit%\n");
-            UserS.RemoveUser(this.UserName);
             this.Send.flush();
-            RU(this.UserName);
             ConnectionSMap.remove(this.UserName);
+            UserS.RemoveUser(this.UserName);
+            RU(this.UserName);
             this.Send.close();
             this.Receive.close();
             this.Connection.close();
+            this.Send.write("%Quit%\n");
             this.interrupt();
             break;
           //Send Text Message
           case "#STM#":
+            System.out.println("#STM#");
             DataLine = Receive.readLine();
+            System.out.println(DataLine);
             JSONObject J = JSONObject.parseObject(DataLine);
-            Message<String> TM = new Message<>(J);
+            TextMessage TM = new TextMessage(J);
             Server.Chat.AddMessage(TM);
             ATM(TM);
             break;
@@ -104,7 +107,7 @@ public class ConnectionS extends Thread {
           case "#CPCR#":
             DataLine = Receive.readLine();
             UN2 = DataLine;
-            CID = Server.Chat.addPrivateChat(this.UserName, UN2);
+            CID = Server.Chat.AddPrivateChat(this.UserName, UN2);
             Send.write("%R-CPCR%\n");
             Send.write(CID + "\n");
             Send.flush();
@@ -112,7 +115,7 @@ public class ConnectionS extends Thread {
             U2.Send.write("%APC%\n");
             U2.Send.write(this.UserName + "\n");
             U2.Send.write(CID + "\n");
-            U2.Send.write(Server.Chat.GetChatRoom(CID).GetChatRoomName() + "\n");
+            U2.Send.write(Server.Chat.GetChatRoom(CID).getChatRoomName() + "\n");
             U2.Send.flush();
             break;
           //Create Group Chat Room
@@ -124,7 +127,7 @@ public class ConnectionS extends Thread {
             CID = Server.Chat.AddGroupChat(UL);
             Send.write("%R-CGCR%\n");
             Send.write(CID + "\n");
-            Send.write(Server.Chat.GetChatRoom(CID).GetChatRoomName() + "\n");
+            Send.write(Server.Chat.GetChatRoom(CID).getChatRoomName() + "\n");
             Send.flush();
             System.out.println("Send Fnishied");
             UL.remove(this.UserName);
@@ -132,7 +135,7 @@ public class ConnectionS extends Thread {
               U2 = ConnectionSMap.get(i);
               U2.Send.write("%AGC%\n");
               U2.Send.write(CID + "\n");
-              U2.Send.write(Server.Chat.GetChatRoom(CID).GetChatRoomName() + "\n");
+              U2.Send.write(Server.Chat.GetChatRoom(CID).getChatRoomName() + "\n");
               U2.Send.flush();
             }
             break;
@@ -151,27 +154,27 @@ public class ConnectionS extends Thread {
           case "#GCRN#":
             DataLine = Receive.readLine();
             CID = UUID.fromString(DataLine);
-            String GN = Server.Chat.GetChatRoom(CID).GetChatRoomName();
+            String GN = Server.Chat.GetChatRoom(CID).getChatRoomName();
             Send.write(CID + "\n");
             Send.flush();
+            break;
           case "#GCRM#":
             DataLine = Receive.readLine();
             CID = UUID.fromString(DataLine);
-            List<Message<String>> LM = Server.Chat.GetChatRoom(CID).GetMessageList();
+            List<TextMessage> LM = Server.Chat.GetChatRoom(CID).getMessageList();
             Send.write("%R-GCRM%\n");
             Send.write(LM.size() + "\n");
-            for (Message<String> i : LM) {
-              Send.write(i.ToJson().toJSONString() + "\n");
+            for (TextMessage i : LM) {
+              Send.write(i.toJson().toJSONString() + "\n");
             }
             Send.flush();
+            break;
           case "#SDM#":
             DataLine = Receive.readLine();
-            DocFile DF = new DocFile(JSONObject.parseObject(DataLine));
-            Message<String> MS = DF.GetMS();
-            Server.Chat.AddMessage(MS);
-            ATM(MS);
-            CID = MS.GetChatRoomId();
-            List<String> UN = Server.Chat.GetChatRoom(CID).GetUserList();
+            System.out.println("SDM:" + DataLine);
+            FileMessage DF = new FileMessage(JSONObject.parseObject(DataLine));
+            CID = DF.getChatRoomId();
+            List<String> UN = Server.Chat.GetChatRoom(CID).getUserList();
             UN.remove(this.UserName);
             for (String i : UN) {
               U2 = ConnectionSMap.get(i);
@@ -182,8 +185,8 @@ public class ConnectionS extends Thread {
             }
             break;
         }
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+      } catch (Exception e) {
+        interrupt();
       }
     }
   }
@@ -202,6 +205,6 @@ public class ConnectionS extends Thread {
     Send.write("Success\n");
     Send.flush();
     ConnectionS SCT = new ConnectionS(S, UN);
-    SCT.start();
+    SCT.run();
   }
 }

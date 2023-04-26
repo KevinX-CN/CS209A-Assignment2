@@ -1,7 +1,7 @@
 package cn.edu.sustech.cs209.chatting.client;
 
 import cn.edu.sustech.cs209.chatting.common.Convert;
-import cn.edu.sustech.cs209.chatting.common.DocFile;
+import cn.edu.sustech.cs209.chatting.common.FileMessage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -49,28 +49,42 @@ public class Controller implements Initializable {
   ListView<String> OnlineUserList;
   @FXML
   ListView<String> ChatList;
-  protected ConnectionC c;
+  protected ConnectionC C;
   String username;
 
   public void ChangeMessageList(List<String> ML) {
+    chatContentList.getItems().clear();
     ObservableList<String> observableList = FXCollections.observableArrayList();
     observableList.setAll(ML);
-    chatContentList.setItems(observableList);
+    try {
+      chatContentList.setItems(observableList);
+    } catch (java.lang.IllegalStateException e) {
+      System.out.println("Nothing!");
+    }
     chatContentList.refresh();
   }
 
   public void ChangeOnlineUserList(List<String> OUL) {
+    OnlineUserList.getItems().clear();
     ObservableList<String> observableList = FXCollections.observableArrayList();
     observableList.setAll(OUL);
-    OnlineUserList.setItems(observableList);
+    try {
+      OnlineUserList.setItems(observableList);
+    } catch (Exception e) {
+
+    }
     OnlineUserList.refresh();
   }
 
   public void ChangeChatList(List<String> CL) {
     ObservableList<String> observableList = FXCollections.observableArrayList();
     observableList.setAll(CL);
-    ChatList.setItems(observableList);
-    ChatList.refresh();
+    try {
+      ChatList.refresh();
+      ChatList.setItems(observableList);
+    } catch (Exception e) {
+
+    }
   }
 
   @Override
@@ -107,8 +121,8 @@ public class Controller implements Initializable {
     Optional<Pair<String, String>> input = dialog.showAndWait();
     input.ifPresent(usernamePassword -> {
       try {
-        c = new ConnectionC(usernamePassword.getKey(), usernamePassword.getValue());
-        if (!c.Connect()) {
+        C = new ConnectionC(usernamePassword.getKey(), usernamePassword.getValue());
+        if (!C.Connect()) {
           Platform.exit();
         }
       } catch (Throwable e) {
@@ -127,7 +141,7 @@ public class Controller implements Initializable {
     ComboBox<String> userSel = new ComboBox<>();
 
     // FIXME: get the user list from server, the current user's name should be filtered out
-    List<String> UserList = c.GetuserList();
+    List<String> UserList = C.GetUserList();
     userSel.getItems().addAll(
       UserList.stream().filter(u -> !Objects.equals(u, username)).collect(Collectors.toList()));
 
@@ -147,7 +161,7 @@ public class Controller implements Initializable {
     // TODO: if the current user already chatted with the selected user, just open the chat with that user
 
     System.out.println("Creat Private Chat:" + user.get());
-    c.CPCR(user.get());
+    C.CPCR(user.get());
     // TODO: otherwise, create a new chat item in the left panel, the title should be the selected user's name
   }
 
@@ -175,7 +189,7 @@ public class Controller implements Initializable {
     System.out.println(UL);
     // TODO: if the current user already chatted with the selected user, just open the chat with that user
     assert UL != null;
-    c.CGCR(UL);
+    C.CGCR(UL);
     // TODO: otherwise, create a new chat item in the left panel, the title should be the selected user's name
 
   }
@@ -194,13 +208,13 @@ public class Controller implements Initializable {
       return;
     }
     InputArea.setText("");
-    c.STM(Text);
+    C.STM(Text);
   }
 
   @FXML
   public void ChangChat() throws IOException {
     System.out.println(ChatList.getSelectionModel().getSelectedItem());
-    c.ChangeChat(ChatList.getSelectionModel().getSelectedItem());
+    C.ChangeChat(ChatList.getSelectionModel().getSelectedItem());
   }
 
   public void doUploadFile() throws IOException {
@@ -215,8 +229,8 @@ public class Controller implements Initializable {
     }
 
     assert SelectedFile != null;
-    DocFile DF = new DocFile(SelectedFile.getName());
-    DF.ReadFile(SelectedFile.getAbsolutePath());
-    c.SDM(DF);
+    FileMessage DF = new FileMessage(C.U.getUserName(), C.NowChat, SelectedFile.getName(), "doc");
+    DF.readFile(SelectedFile.getAbsolutePath());
+    C.SDM(DF);
   }
 }

@@ -42,6 +42,6 @@ public class Message<T> {
   }
 
   public String ToString() {
-    return this.SenderName+":\n"+this.Message;
+    return this.SenderName + ":\n" + this.Message;
   }
 }
